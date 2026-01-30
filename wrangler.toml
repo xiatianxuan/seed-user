@@ -1,7 +1,7 @@
-name = "slog-user"
+name = "seed-user"
+compatibility_date = "2026-01-30"
 
 [pages]
-compatibility_date = "2026-01-30"
 
 [pages.build]
 output_dir = "public"
