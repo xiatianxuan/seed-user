@@ -26,42 +26,50 @@ function isValidEmail(email: string): boolean {
     return re.test(email);
 }
 
-// 工具函数： 生成密码哈希（使用 PBKDF2 + SHA-256）
-async function hashPassword(password: string): Promise<string> {
-    // 将密码转为 Uint8Array
-    const encoder = new TextEncoder();
-    const data = encoder.encode(password);
+// 工具函数： 标准化用户名
+function validateUsername(name: string): string | null {
+    const trimmed = name.trim().toLowerCase();
 
-    // 生成随机盐（16 字节）
-    const salt = crypto.getRandomValues(new Uint8Array(16));
+    if (trimmed.length === 0 || trimmed.length > 15) return null;
+    if (!/^[a-z0-9_-]+$/.test(trimmed)) return null;
+    if (/^\d+$/.test(trimmed)) return null;
+    return trimmed;
+}
 
-    // 使用 PBKDF2 算法派生密钥
-    const key = await crypto.subtle.importKey(
-        "raw",
-        data,
-        { name: "PBKDF2" },
-        false,
-        ["deriveBits"]
-    );
+// 工具函数：生成密码哈希和盐（分离存储）
+async function hashPassword(password: string): Promise<{ salt: string; hash: string }> {
+  const encoder = new TextEncoder();
+  const data = encoder.encode(password);
 
-    const derivedBits = await crypto.subtle.deriveBits(
-        {
-            name: "PBKDF2",
-            salt: salt,
-            iterations: 100000,
-            hash: "SHA-256"
-        },
-        key,
-        256
-    );
+  // 生成 16 字节随机盐
+  const salt = crypto.getRandomValues(new Uint8Array(16));
 
-    // 合并 salt + hash, Base64 编码存储
-    const hashArray = new Uint8Array(derivedBits);
-    const combined = new Uint8Array(salt.length + hashArray.length);
-    combined.set(salt);
-    combined.set(hashArray, salt.length);
+  // 导入原始密码作为密钥材料
+  const key = await crypto.subtle.importKey(
+    "raw",
+    data,
+    { name: "PBKDF2" },
+    false,
+    ["deriveBits"]
+  );
 
-    return btoa(String.fromCharCode(...combined));
+  // 派生 256 位（32字节）哈希
+  const derivedBits = await crypto.subtle.deriveBits(
+    {
+      name: "PBKDF2",
+      salt: salt,
+      iterations: 100_000,
+      hash: "SHA-256"
+    },
+    key,
+    256
+  );
+
+  // 分别 Base64 编码 salt 和 hash
+  const saltB64 = btoa(String.fromCharCode(...salt));
+  const hashB64 = btoa(String.fromCharCode(...new Uint8Array(derivedBits)));
+
+  return { salt: saltB64, hash: hashB64 };
 }
 
 export async function onRequest({
@@ -82,7 +90,7 @@ export async function onRequest({
     const contentType = request.headers.get("content-type");
     if (!contentType || !contentType.includes("application/json")) {
         return new Response(
-            JSON.stringify({ error: "Content-Type must be application/json"}),
+            JSON.stringify({ error: "Content-Type must be application/json" }),
             { status: 400, headers: { "Content-Type": "application/json" } }
         );
     }
@@ -91,7 +99,7 @@ export async function onRequest({
     let body;
     try {
         body = await request.json();
-    } catch(e) {
+    } catch (e) {
         return new Response(
             JSON.stringify({ error: "Invalid JSON" }),
             { status: 400, headers: { "Content-Type": "application/json" } }
@@ -102,38 +110,47 @@ export async function onRequest({
         typeof body !== "object" ||
         body === null ||
         !("email" in body) ||
-        !("password" in body)
+        !("password" in body) ||
+        !("name" in body)
     ) {
-        return new Response(JSON.stringify({ error: "Missing email or password" }),
-    {
-        status: 400,
-        headers: { "Content-Type": "application/json" }
-    });
+        return new Response(JSON.stringify({ error: "Missing name, email or password" }),
+            {
+                status: 400,
+                headers: { "Content-Type": "application/json" }
+            });
     }
-    const { email, password } = body as { email: unknown; password: unknown };
+    const { name, email, password } = body as { name: unknown, email: unknown; password: unknown };
 
-    if (typeof email !== "string" || typeof password !== "string") {
-        return new Response(JSON.stringify({ error: "Email and password must be strings" }),
-    {
-        status: 400,
-        headers: { "Content-Type": "application/json" }
-    });
+    if (typeof email !== "string" || typeof password !== "string" || typeof name !== "string") {
+        return new Response(JSON.stringify({ error: "Name, email and password must be strings" }),
+            {
+                status: 400,
+                headers: { "Content-Type": "application/json" }
+            });
     }
 
     // 输入验证
-    if (!email || !password) {
+    if (!email || !password || !name) {
         return new Response(
-            JSON.stringify({ error: "Missing email or password" }),
+            JSON.stringify({ error: "Missing name, email or password" }),
             { status: 400, headers: { "Content-Type": "application/json" } }
         );
+    }
+    const validName = validateUsername(name);
+    if (!validName) {
+        return new Response(JSON.stringify({
+            error: "Username must be 1-15 lowercase letters, digits, underscores or hyphens (not all digits)."
+        }), { status: 400 });
     }
 
     if (!isValidEmail(email)) {
         return new Response(
             JSON.stringify({ error: "Invalid email format" }),
-            { status:400, headers: { "Content-Type": "application/json" } }
+            { status: 400, headers: { "Content-Type": "application/json" } }
         );
     }
+
+
 
     if (password.length < 12) {
         return new Response(
@@ -144,28 +161,40 @@ export async function onRequest({
 
     try {
         // 检查邮箱是否已存在
-        const existing = await env.DB
-        .prepare("SELECT id FROM users WHERE email = ?")
-        .bind(email.toLowerCase())
-        .first();
+        const existingEmail = await env.DB
+            .prepare("SELECT id FROM users WHERE email = ?")
+            .bind(email.toLowerCase())
+            .first();
 
-        if (existing) {
+        if (existingEmail) {
             return new Response(
                 JSON.stringify({ error: "Email already registered" }),
-                { status:409, headers: { "Content-Type": "application/json" } }
+                { status: 409, headers: { "Content-Type": "application/json" } }
+            );
+        }
+
+        const existingName = await env.DB
+            .prepare("SELECT id FROM users WHERE name = ?")
+            .bind(validName)
+            .first();
+
+        if (existingName) {
+            return new Response(
+                JSON.stringify({ error: "Name already registered" }),
+                { status: 409, headers: { "Content-Type": "application/json" } }
             );
         }
 
         // 哈希密码
-        const passwordHash = await hashPassword(password);
+        const { salt, hash } = await hashPassword(password);
 
         // 插入新用户（邮箱转小写存储， 避免大小写问题）
         await env.DB
-        .prepare(
-            "INSERT INTO users (email, password_hash, created_at) VALUES (?, ?, datetime('now'))"
-        )
-        .bind(email.toLowerCase(), passwordHash)
-        .run();
+            .prepare(
+                "INSERT INTO users (name, email, password_salt, password_hash, created_at, role) VALUES (?, ?, ?, ?, datetime('now'), 'user')"
+            )
+            .bind(validName, email.toLowerCase(), salt, hash)
+            .run();
 
         // 返回成功
         return new Response(
@@ -176,15 +205,15 @@ export async function onRequest({
             }),
             {
                 status: 201,
-                headers: { "Content-Type": "application/json"}
+                headers: { "Content-Type": "application/json" }
             }
         );
     } catch (error) {
         console.error("Signup error:", error);
 
         // 防止泄露内部错误
-        return new Response(JSON.stringify({
-        error: error instanceof Error ? error.message : 'Unknown'
-        }), { status: 500 });
+        return new Response(JSON.stringify({ error: "Internal server error" }),
+            { status: 500, headers: { "Content-Type": "application/json" } }
+        );
     }
 }
