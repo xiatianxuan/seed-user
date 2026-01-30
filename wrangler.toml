@@ -1,0 +1,9 @@
+name = "slog"
+
+# 兼容性日期（必须设置）
+compatibility_date = "2026-01-30"
+
+[[d1_databases]]
+binding = "DB"          # 在代码中通过 env.DB 访问
+database_name = "slog-user"
+database_id = "f79ab3ea-cc9a-4f40-86d7-635e960b28a0"
