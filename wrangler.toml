@@ -4,7 +4,7 @@ name = "slog-user"
 compatibility_date = "2026-01-30"
 
 [pages.build]
-upload_dir = "public"
+output_dir = "public"
 
 [[d1_databases]]
 binding = "DB"
