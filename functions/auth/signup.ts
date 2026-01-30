@@ -183,9 +183,8 @@ export async function onRequest({
         console.error("Signup error:", error);
 
         // 防止泄露内部错误
-        return new Response(
-            JSON.stringify({ error: "Internal server error"}),
-            { status: 500, headers: { "Content-Type": "application/json" } }
-        );
+        return new Response(JSON.stringify({
+        error: error instanceof Error ? error.message : 'Unknown'
+        }), { status: 500 });
     }
 }
