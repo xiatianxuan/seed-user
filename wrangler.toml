@@ -1,6 +1,7 @@
-name = "slog"
+name = "slog-user"
 
 # 兼容性日期（必须设置）
+[pages]
 compatibility_date = "2026-01-30"
 
 [[d1_databases]]
