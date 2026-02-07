@@ -1,0 +1,386 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>注册 - 毛玻璃风格</title>
+  <meta name="theme-color" content="#2575fc">
+  <style>
+    /* === 原有样式保持不变 === */
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      font-family: "Helvetica Neue", "PingFang SC", "Microsoft YaHei", sans-serif;
+    }
+
+    body {
+      background: #8a8a8a no-repeat center center fixed;
+      background-size: cover;
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 20px;
+      transition: background-image 0.5s ease;
+    }
+
+    .register-container {
+      background: rgba(255, 255, 255, 0.25);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border-radius: 16px;
+      border: 1px solid rgba(255, 255, 255, 0.3);
+      padding: 2.5rem;
+      width: 90%;
+      max-width: 400px;
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
+      position: relative;
+      z-index: 5;
+    }
+
+    .register-container h2 {
+      text-align: center;
+      margin-bottom: 1.5rem;
+      color: white;
+      text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+    }
+
+    .input-group {
+      margin-bottom: 1.2rem;
+      position: relative;
+    }
+
+    .input-group label {
+      display: block;
+      margin-bottom: 0.4rem;
+      font-weight: 500;
+      color: white;
+      text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+    }
+
+    .input-group input {
+      width: 100%;
+      padding: 0.8rem;
+      border: none;
+      border-radius: 8px;
+      font-size: 1rem;
+      background: rgba(255, 255, 255, 0.85);
+      backdrop-filter: blur(4px);
+      color: #333;
+    }
+
+    .input-group input::placeholder {
+      color: #888;
+    }
+
+    .toggle-password {
+      position: absolute;
+      right: 12px;
+      top: 50%;
+      transform: translateY(-50%);
+      cursor: pointer;
+      color: #666;
+      font-size: 0.85rem;
+      font-weight: bold;
+      user-select: none;
+    }
+
+    .register-btn {
+      width: 100%;
+      padding: 0.9rem;
+      background: rgba(37, 117, 252, 0.9);
+      color: white;
+      border: none;
+      border-radius: 8px;
+      font-size: 1.1rem;
+      cursor: pointer;
+      transition: all 0.3s;
+      backdrop-filter: blur(4px);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .register-btn::after {
+      content: '';
+      position: absolute;
+      top: 50%; left: 50%;
+      width: 0; height: 0;
+      background: rgba(255,255,255,0.3);
+      border-radius: 50%;
+      transform: translate(-50%, -50%);
+      transition: width 0.6s, height 0.6s;
+    }
+
+    .register-btn:active::after {
+      width: 200px;
+      height: 200px;
+    }
+
+    .footer {
+      text-align: center;
+      margin-top: 1.2rem;
+      font-size: 0.9rem;
+    }
+
+    .footer a {
+      color: rgba(255, 255, 255, 0.9);
+      text-decoration: none;
+      text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+    }
+
+    .error-message {
+      color: #ff6b6b;
+      font-size: 0.85rem;
+      margin-top: 0.3rem;
+      text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+      display: none;
+    }
+
+    .show-error {
+      display: block !important;
+    }
+
+    /* === 统一 Toast 样式 === */
+    .toast {
+      position: fixed;
+      bottom: 20px;
+      left: 50%;
+      transform: translateX(-50%) translateY(100px);
+      padding: 12px 24px;
+      border-radius: 8px;
+      font-weight: 500;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+      z-index: 1000;
+      opacity: 0;
+      transition: all 0.4s ease;
+      color: white;
+      max-width: 80%;
+      text-align: center;
+      word-break: break-word;
+    }
+
+    .toast.success {
+      background: rgba(46, 204, 113, 0.95); /* 绿色 */
+    }
+
+    .toast.error {
+      background: rgba(231, 76, 60, 0.95); /* 红色 */
+    }
+
+    .toast.show {
+      transform: translateX(-50%) translateY(0);
+      opacity: 1;
+    }
+
+    @supports not (backdrop-filter: blur(12px)) {
+      .register-container {
+        background: rgba(255, 255, 255, 0.85);
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="register-container">
+    <h2>创建账号</h2>
+    <form id="registerForm">
+      <div class="input-group">
+        <label for="name">姓名</label>
+        <input type="text" id="name" name="name" placeholder="请输入真实姓名" autocomplete="name" required />
+        <div class="error-message" id="nameError"></div>
+      </div>
+
+      <div class="input-group">
+        <label for="email">邮箱</label>
+        <input type="email" id="email" name="email" placeholder="example@domain.com" autocomplete="email" required />
+        <div class="error-message" id="emailError"></div>
+      </div>
+
+      <div class="input-group">
+        <label for="password">密码</label>
+        <div style="position: relative;">
+          <input type="password" id="password" name="password" placeholder="至少12位，含三类字符" autocomplete="new-password" required />
+          <span class="toggle-password" id="togglePassword1">Show</span>
+        </div>
+        <div class="error-message" id="passwordError"></div>
+      </div>
+
+      <div class="input-group">
+        <label for="confirmPassword">确认密码</label>
+        <div style="position: relative;">
+          <input type="password" id="confirmPassword" name="confirmPassword" placeholder="请再次输入密码" autocomplete="new-password" required />
+          <span class="toggle-password" id="togglePassword2">Show</span>
+        </div>
+        <div class="error-message" id="confirmPasswordError"></div>
+      </div>
+
+      <button type="submit" class="register-btn">立即注册</button>
+    </form>
+    <div class="footer">
+      <a href="../login.html">已有账号？去登录</a>
+    </div>
+  </div>
+
+  <!-- Toast 容器（动态生成） -->
+  <div id="toastContainer"></div>
+
+  <script>
+    // === 随机背景图 ===
+    (function() {
+      const backgrounds = [
+        '/images/bg1.jpg',
+        '/images/bg2.jpg',
+        '/images/bg3.jpg',
+        '/images/bg4.jpg',
+        '/images/bg5.jpg'
+      ];
+      const randomBg = backgrounds[Math.floor(Math.random() * backgrounds.length)];
+      document.body.style.backgroundImage = `url('${randomBg}')`;
+    })();
+
+    // === 密码强度检查 ===
+    function checkPasswordStrength(pwd) {
+      const checks = {
+        hasLower: /[a-z]/.test(pwd),
+        hasUpper: /[A-Z]/.test(pwd),
+        hasDigit: /\d/.test(pwd),
+        hasSpecial: /[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(pwd)
+      };
+      const count = Object.values(checks).filter(Boolean).length;
+      return pwd.length >= 12 && count >= 3;
+    }
+
+    // === 密码切换 ===
+    function setupToggle(toggleId, inputId) {
+      const toggle = document.getElementById(toggleId);
+      const input = document.getElementById(inputId);
+      toggle.addEventListener('click', () => {
+        if (input.type === 'password') {
+          input.type = 'text';
+          toggle.textContent = 'Hide';
+        } else {
+          input.type = 'password';
+          toggle.textContent = 'Show';
+        }
+      });
+    }
+
+    setupToggle('togglePassword1', 'password');
+    setupToggle('togglePassword2', 'confirmPassword');
+
+    // === 统一 Toast 提示函数 ===
+    function showToast(message, type = 'success') {
+      const container = document.getElementById('toastContainer');
+      
+      // 创建 toast 元素
+      const toast = document.createElement('div');
+      toast.className = `toast ${type}`;
+      toast.textContent = message;
+      
+      container.appendChild(toast);
+      
+      // 触发动画
+      setTimeout(() => toast.classList.add('show'), 10);
+      
+      // 2秒后移除
+      setTimeout(() => {
+        toast.classList.remove('show');
+        setTimeout(() => {
+          if (toast.parentNode) toast.parentNode.removeChild(toast);
+        }, 400);
+      }, 2000);
+    }
+
+    // === 表单提交 ===
+    document.getElementById('registerForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+
+      const name = document.getElementById('name').value.trim();
+      const email = document.getElementById('email').value.trim();
+      const password = document.getElementById('password').value;
+      const confirmPassword = document.getElementById('confirmPassword').value;
+
+      // 清除旧错误
+      document.querySelectorAll('.error-message').forEach(el => el.classList.remove('show-error'));
+
+      let valid = true;
+
+      if (!name) {
+        showError('nameError', '请输入姓名');
+        valid = false;
+      }
+
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!email) {
+        showError('emailError', '请输入邮箱');
+        valid = false;
+      } else if (!emailRegex.test(email)) {
+        showError('emailError', '邮箱格式不正确');
+        valid = false;
+      }
+
+      if (!password) {
+        showError('passwordError', '请输入密码');
+        valid = false;
+      } else if (!checkPasswordStrength(password)) {
+        showError('passwordError', '密码需至少12位，并包含小写字母、大写字母、数字、特殊符号中的任意三种');
+        valid = false;
+      }
+
+      if (password !== confirmPassword) {
+        showError('confirmPasswordError', '两次密码不一致');
+        valid = false;
+      }
+
+      if (!valid) return;
+
+      const btn = document.querySelector('.register-btn');
+      const originalText = btn.textContent;
+      btn.disabled = true;
+      btn.textContent = '注册中...';
+
+      try {
+        const res = await fetch('http://127.0.0.1:8788/api/signup', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ name, email, password })
+        });
+
+        const data = await res.json();
+
+        if (res.ok && data.success) {
+          showToast('验证邮件已发送，有效期5分钟，请注意查收。', 'success');
+          setTimeout(() => {
+            window.location.href = '../login.html';
+          }, 2000);
+        } else {
+          // 后端返回的错误也用 Toast 显示
+          const errorMsg = data.error || '注册失败，请稍后重试';
+          showToast(errorMsg, 'error');
+        }
+      } catch (err) {
+        console.error(err);
+        showToast('网络错误，请确保本地服务已启动', 'error');
+      } finally {
+        btn.disabled = false;
+        btn.textContent = originalText;
+      }
+    });
+
+    function showError(id, msg) {
+      const el = document.getElementById(id);
+      el.textContent = msg;
+      el.classList.add('show-error');
+    }
+
+    document.querySelectorAll('input').forEach(input => {
+      input.addEventListener('input', () => {
+        const errorId = input.id + 'Error';
+        const errorEl = document.getElementById(errorId);
+        if (errorEl) errorEl.classList.remove('show-error');
+      });
+    });
+  </script>
+</body>
+</html>
