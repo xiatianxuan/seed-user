@@ -17,6 +17,15 @@
 
 import { sendEmail, type SendEmailResult } from '../../utils/sendEmail';
 
+// ✅ 生成北京时间字符串 (格式: "2026-02-07 17:30:00")
+function getBeijingTimeString(offsetMinutes = 0): string {
+    const now = Date.now() + 8 * 3600 * 1000 + offsetMinutes * 60 * 1000;
+    return new Date(now)
+        .toISOString()
+        .slice(0, 19)
+        .replace('T', ' ');
+}
+
 // ✅ 完整定义 Env 接口：包含 D1 + 所有环境变量
 interface Env {
     DB: D1Database;
@@ -48,7 +57,7 @@ async function hashPassword(password: string): Promise<{ salt: string; hash: str
     const salt = crypto.getRandomValues(new Uint8Array(16));
     const key = await crypto.subtle.importKey("raw", data, { name: "PBKDF2" }, false, ["deriveBits"]);
     const derivedBits = await crypto.subtle.deriveBits(
-        { name: "PBKDF2", salt, iterations: 100_000, hash: "SHA-256" },
+        { name: "PBKDF2", salt, iterations: 100_000, hash: "SHA-512" },
         key,
         256
     );
@@ -167,16 +176,22 @@ export async function onRequest({
         // ✅ 生成唯一 token
         const token = crypto.randomUUID();
 
-        // ✅ 插入 pending_registrations（不再写 users 表！）
+        // ✅ 获取当前时间和5分钟后的时间（都是北京时间）
+        const createdAtBeijing = getBeijingTimeString();     // 现在
+        const expiresAtBeijing = getBeijingTimeString(5);   // +5分钟
+
         await env.DB.prepare(`
-            INSERT INTO pending_registrations (name, email, password_salt, password_hash, token, expires_at)
-            VALUES (?, ?, ?, ?, ?, datetime('now', '+5 minutes'))
+        INSERT INTO pending_registrations (
+        name, email, password_salt, password_hash, token, created_at, expires_at
+        ) VALUES (?, ?, ?, ?, ?, ?, ?)
         `).bind(
             validName,
             email.toLowerCase(),
             salt,
             hash,
-            token
+            token,
+            createdAtBeijing,   // ← 新增
+            expiresAtBeijing
         ).run();
 
         // ✅ 构造验证链接（指向 /api/verify-email）

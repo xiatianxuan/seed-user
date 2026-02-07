@@ -15,6 +15,14 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
+// ✅ 获取当前北京时间字符串 (格式: "2026-02-07 17:30:00")
+function getBeijingTimeString(): string {
+    return new Date(Date.now() + 8 * 3600 * 1000)
+        .toISOString()
+        .slice(0, 19)
+        .replace('T', ' ');
+}
+
 interface Env {
     DB: D1Database;
 }
@@ -38,12 +46,14 @@ export async function onRequest({
     }
 
     try {
-        // 1. 查找有效的 pending 记录
+        // ✅ 获取当前北京时间
+        const nowBeijing = getBeijingTimeString();
+
         const pending = await env.DB.prepare(`
-            SELECT name, email, password_salt, password_hash, created_at
-            FROM pending_registrations
-            WHERE token = ? AND expires_at > datetime('now')
-        `).bind(token).first();
+        SELECT name, email, password_salt, password_hash, created_at
+        FROM pending_registrations
+        WHERE token = ? AND datetime(expires_at) > datetime(?)
+        `).bind(token, nowBeijing).first();
 
         if (!pending) {
             return new Response("验证链接已失效或不存在，请重新注册。", { status: 404 });

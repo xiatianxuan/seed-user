@@ -1,0 +1,349 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>登录 - Seed</title>
+    <meta name="theme-color" content="#2575fc">
+
+    <!-- 🔥 预加载所有 WebP 背景图 -->
+    <link rel="preload" as="image" href="/images/bg1.webp">
+    <link rel="preload" as="image" href="/images/bg2.webp">
+    <link rel="preload" as="image" href="/images/bg3.webp">
+    <link rel="preload" as="image" href="/images/bg4.webp">
+    <link rel="preload" as="image" href="/images/bg5.webp">
+
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: "Helvetica Neue", "PingFang SC", "Microsoft YaHei", sans-serif;
+        }
+
+        body {
+            background: #8a8a8a no-repeat center center fixed;
+            background-size: cover;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+            transition: background-image 0.5s ease;
+        }
+
+        .login-container {
+            background: rgba(255, 255, 255, 0.25);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border-radius: 16px;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            padding: 2.5rem;
+            width: 90%;
+            max-width: 400px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
+            position: relative;
+            z-index: 5;
+        }
+
+        .login-container h2 {
+            text-align: center;
+            margin-bottom: 1.5rem;
+            color: white;
+            text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+        }
+
+        .input-group {
+            margin-bottom: 1.2rem;
+            position: relative;
+        }
+
+        .input-group label {
+            display: block;
+            margin-bottom: 0.4rem;
+            font-weight: 500;
+            color: white;
+            text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+        }
+
+        .input-group input {
+            width: 100%;
+            padding: 0.8rem;
+            border: none;
+            border-radius: 8px;
+            font-size: 1rem;
+            background: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(4px);
+            color: #333;
+        }
+
+        .input-group input::placeholder {
+            color: #888;
+        }
+
+        .toggle-password {
+            position: absolute;
+            right: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            cursor: pointer;
+            color: #666;
+            font-size: 0.85rem;
+            font-weight: bold;
+            user-select: none;
+        }
+
+        .login-btn {
+            width: 100%;
+            padding: 0.9rem;
+            background: rgba(37, 117, 252, 0.9);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 1.1rem;
+            cursor: pointer;
+            transition: all 0.3s;
+            backdrop-filter: blur(4px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .login-btn::after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 0;
+            height: 0;
+            background: rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            transform: translate(-50%, -50%);
+            transition: width 0.6s, height 0.6s;
+        }
+
+        .login-btn:active::after {
+            width: 200px;
+            height: 200px;
+        }
+
+        .footer {
+            text-align: center;
+            margin-top: 1.2rem;
+            font-size: 0.9rem;
+        }
+
+        .footer a {
+            color: rgba(255, 255, 255, 0.9);
+            text-decoration: none;
+            text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+        }
+
+        .error-message {
+            color: #ff6b6b;
+            font-size: 0.85rem;
+            margin-top: 0.3rem;
+            text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+            display: none;
+        }
+
+        .show-error {
+            display: block !important;
+        }
+
+        .toast {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%) translateY(100px);
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-weight: 500;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+            z-index: 1000;
+            opacity: 0;
+            transition: all 0.4s ease;
+            color: white;
+            max-width: 80%;
+            text-align: center;
+            word-break: break-word;
+        }
+
+        .toast.success {
+            background: rgba(46, 204, 113, 0.95);
+        }
+
+        .toast.error {
+            background: rgba(231, 76, 60, 0.95);
+        }
+
+        .toast.show {
+            transform: translateX(-50%) translateY(0);
+            opacity: 1;
+        }
+
+        @supports not (backdrop-filter: blur(12px)) {
+            .login-container {
+                background: rgba(255, 255, 255, 0.85);
+            }
+        }
+    </style>
+    <script>
+        (async () => {
+            try {
+                const res = await fetch('/api/user', {
+                    method: 'GET',
+                    credentials: 'same-origin'
+                });
+                if (res.ok) {
+                    window.location.replace('/');
+                }
+            } catch (e) {
+                // 未登录，继续显示页面
+            }
+        })();
+    </script>
+</head>
+
+<body>
+    <!-- 🎯 设置随机背景图 -->
+    <script>
+        (function () {
+            const backgrounds = [
+                '/images/bg1.webp',
+                '/images/bg2.webp',
+                '/images/bg3.webp'
+            ];
+            const randomBg = backgrounds[Math.floor(Math.random() * backgrounds.length)];
+            document.body.style.backgroundImage = `url('${randomBg}')`;
+        })();
+    </script>
+
+    <div class="login-container">
+        <h2>欢迎回来</h2>
+        <form id="loginForm">
+            <div class="input-group">
+                <label for="identifier">用户名或邮箱</label>
+                <input type="text" id="identifier" name="identifier" placeholder="输入用户名或邮箱" autocomplete="username"
+                    required />
+                <div class="error-message" id="identifierError"></div>
+            </div>
+
+            <div class="input-group">
+                <label for="password">密码</label>
+                <div style="position: relative;">
+                    <input type="password" id="password" name="password" placeholder="输入密码"
+                        autocomplete="current-password" required />
+                    <span class="toggle-password" id="togglePassword">Show</span>
+                </div>
+                <div class="error-message" id="passwordError"></div>
+            </div>
+
+            <button type="submit" class="login-btn">登录</button>
+        </form>
+        <div class="footer">
+            <a href="/signup">还没有账号？去注册</a>
+        </div>
+    </div>
+
+    <div id="toastContainer"></div>
+
+    <script>
+        // === 密码切换 ===
+        document.getElementById('togglePassword').addEventListener('click', function () {
+            const input = document.getElementById('password');
+            if (input.type === 'password') {
+                input.type = 'text';
+                this.textContent = 'Hide';
+            } else {
+                input.type = 'password';
+                this.textContent = 'Show';
+            }
+        });
+
+        // === Toast 提示 ===
+        function showToast(message, type = 'success') {
+            const container = document.getElementById('toastContainer');
+            const toast = document.createElement('div');
+            toast.className = `toast ${type}`;
+            toast.textContent = message;
+            container.appendChild(toast);
+            setTimeout(() => toast.classList.add('show'), 10);
+            setTimeout(() => {
+                toast.classList.remove('show');
+                setTimeout(() => toast.remove(), 400);
+            }, 2000);
+        }
+
+        // === 表单提交 ===
+        document.getElementById('loginForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const identifier = document.getElementById('identifier').value.trim();
+            const password = document.getElementById('password').value;
+
+            // 清除旧错误
+            document.querySelectorAll('.error-message').forEach(el => el.classList.remove('show-error'));
+
+            if (!identifier) {
+                showError('identifierError', '请输入用户名或邮箱');
+                return;
+            }
+            if (!password) {
+                showError('passwordError', '请输入密码');
+                return;
+            }
+
+            const btn = document.querySelector('.login-btn');
+            const originalText = btn.textContent;
+            btn.disabled = true;
+            btn.textContent = '登录中...';
+
+            try {
+                // ✅ 关键：credentials: 'same-origin' 自动携带 Cookie
+                const res = await fetch('/api/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    credentials: 'same-origin',
+                    body: JSON.stringify({ identifier, password })
+                });
+
+                const data = await res.json();
+
+                if (res.ok && data.success) {
+                    showToast('登录成功！', 'success');
+                    setTimeout(() => {
+                        window.location.href = '/'; // 可改为 /dashboard
+                    }, 1000);
+                } else {
+                    const errorMsg = data.error || '用户名或密码错误';
+                    showToast(errorMsg, 'error');
+                }
+            } catch (err) {
+                console.error('登录请求失败:', err);
+                showToast('网络错误，请稍后重试', 'error');
+            } finally {
+                btn.disabled = false;
+                btn.textContent = originalText;
+            }
+        });
+
+        function showError(id, msg) {
+            const el = document.getElementById(id);
+            el.textContent = msg;
+            el.classList.add('show-error');
+        }
+
+        // 实时清除错误
+        document.querySelectorAll('input').forEach(input => {
+            input.addEventListener('input', () => {
+                const errorId = input.id + 'Error';
+                const errorEl = document.getElementById(errorId);
+                if (errorEl) errorEl.classList.remove('show-error');
+            });
+        });
+    </script>
+</body>
+
+</html>
