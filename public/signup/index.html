@@ -1,8 +1,9 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
+
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>注册 - Seed</title>
   <meta name="theme-color" content="#2575fc">
 
@@ -113,9 +114,11 @@
     .register-btn::after {
       content: '';
       position: absolute;
-      top: 50%; left: 50%;
-      width: 0; height: 0;
-      background: rgba(255,255,255,0.3);
+      top: 50%;
+      left: 50%;
+      width: 0;
+      height: 0;
+      background: rgba(255, 255, 255, 0.3);
       border-radius: 50%;
       transform: translate(-50%, -50%);
       transition: width 0.6s, height 0.6s;
@@ -158,7 +161,7 @@
       padding: 12px 24px;
       border-radius: 8px;
       font-weight: 500;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
       z-index: 1000;
       opacity: 0;
       transition: all 0.4s ease;
@@ -187,11 +190,27 @@
       }
     }
   </style>
+  <script>
+    (async () => {
+      try {
+        const res = await fetch('/api/user', {
+          method: 'GET',
+          credentials: 'same-origin'
+        });
+        if (res.ok) {
+          window.location.replace('/');
+        }
+      } catch (e) {
+        // 未登录，继续显示页面
+      }
+    })();
+  </script>
 </head>
+
 <body>
   <!-- 🎯 立即设置随机背景图（在 DOM 渲染前执行） -->
   <script>
-    (function() {
+    (function () {
       const backgrounds = [
         '/images/bg1.webp',
         '/images/bg2.webp',
@@ -220,7 +239,8 @@
       <div class="input-group">
         <label for="password">密码</label>
         <div style="position: relative;">
-          <input type="password" id="password" name="password" placeholder="至少12位，含三类字符" autocomplete="new-password" required />
+          <input type="password" id="password" name="password" placeholder="至少12位，含三类字符" autocomplete="new-password"
+            required />
           <span class="toggle-password" id="togglePassword1">Show</span>
         </div>
         <div class="error-message" id="passwordError"></div>
@@ -229,7 +249,8 @@
       <div class="input-group">
         <label for="confirmPassword">确认密码</label>
         <div style="position: relative;">
-          <input type="password" id="confirmPassword" name="confirmPassword" placeholder="请再次输入密码" autocomplete="new-password" required />
+          <input type="password" id="confirmPassword" name="confirmPassword" placeholder="请再次输入密码"
+            autocomplete="new-password" required />
           <span class="toggle-password" id="togglePassword2">Show</span>
         </div>
         <div class="error-message" id="confirmPasswordError"></div>
@@ -238,7 +259,7 @@
       <button type="submit" class="register-btn">立即注册</button>
     </form>
     <div class="footer">
-      <a href="/login.html">已有账号？去登录</a>
+      <a href="/login">已有账号？去登录</a>
     </div>
   </div>
 
@@ -378,4 +399,5 @@
     });
   </script>
 </body>
+
 </html>
