@@ -16,7 +16,7 @@
     "functions/**/*.ts"
   ],
   "devDependencies": {
-    "@cloudflare/workers-types": "^4.20260130.0",
+    "@cloudflare/workers-types": "^4.20260207.0",
     "typescript": "^5.9.3"
   }
 }
