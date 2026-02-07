@@ -3,10 +3,17 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>注册 - 毛玻璃风格</title>
+  <title>注册 - Seed</title>
   <meta name="theme-color" content="#2575fc">
+
+  <!-- 🔥 预加载所有 WebP 背景图（提升加载优先级） -->
+  <link rel="preload" as="image" href="/images/bg1.webp">
+  <link rel="preload" as="image" href="/images/bg2.webp">
+  <link rel="preload" as="image" href="/images/bg3.webp">
+  <link rel="preload" as="image" href="/images/bg4.webp">
+  <link rel="preload" as="image" href="/images/bg5.webp">
+
   <style>
-    /* === 原有样式保持不变 === */
     * {
       margin: 0;
       padding: 0;
@@ -15,6 +22,7 @@
     }
 
     body {
+      /* 默认背景色防白屏 */
       background: #8a8a8a no-repeat center center fixed;
       background-size: cover;
       min-height: 100vh;
@@ -142,7 +150,6 @@
       display: block !important;
     }
 
-    /* === 统一 Toast 样式 === */
     .toast {
       position: fixed;
       bottom: 20px;
@@ -162,11 +169,11 @@
     }
 
     .toast.success {
-      background: rgba(46, 204, 113, 0.95); /* 绿色 */
+      background: rgba(46, 204, 113, 0.95);
     }
 
     .toast.error {
-      background: rgba(231, 76, 60, 0.95); /* 红色 */
+      background: rgba(231, 76, 60, 0.95);
     }
 
     .toast.show {
@@ -182,12 +189,25 @@
   </style>
 </head>
 <body>
+  <!-- 🎯 立即设置随机背景图（在 DOM 渲染前执行） -->
+  <script>
+    (function() {
+      const backgrounds = [
+        '/images/bg1.webp',
+        '/images/bg2.webp',
+        '/images/bg3.webp'
+      ];
+      const randomBg = backgrounds[Math.floor(Math.random() * backgrounds.length)];
+      document.body.style.backgroundImage = `url('${randomBg}')`;
+    })();
+  </script>
+
   <div class="register-container">
     <h2>创建账号</h2>
     <form id="registerForm">
       <div class="input-group">
-        <label for="name">姓名</label>
-        <input type="text" id="name" name="name" placeholder="请输入真实姓名" autocomplete="name" required />
+        <label for="name">用户名</label>
+        <input type="text" id="name" name="name" placeholder="请输入用户名" autocomplete="name" required />
         <div class="error-message" id="nameError"></div>
       </div>
 
@@ -218,27 +238,13 @@
       <button type="submit" class="register-btn">立即注册</button>
     </form>
     <div class="footer">
-      <a href="../login.html">已有账号？去登录</a>
+      <a href="/login.html">已有账号？去登录</a>
     </div>
   </div>
 
-  <!-- Toast 容器（动态生成） -->
   <div id="toastContainer"></div>
 
   <script>
-    // === 随机背景图 ===
-    (function() {
-      const backgrounds = [
-        '/images/bg1.jpg',
-        '/images/bg2.jpg',
-        '/images/bg3.jpg',
-        '/images/bg4.jpg',
-        '/images/bg5.jpg'
-      ];
-      const randomBg = backgrounds[Math.floor(Math.random() * backgrounds.length)];
-      document.body.style.backgroundImage = `url('${randomBg}')`;
-    })();
-
     // === 密码强度检查 ===
     function checkPasswordStrength(pwd) {
       const checks = {
@@ -269,30 +275,21 @@
     setupToggle('togglePassword1', 'password');
     setupToggle('togglePassword2', 'confirmPassword');
 
-    // === 统一 Toast 提示函数 ===
+    // === Toast 提示 ===
     function showToast(message, type = 'success') {
       const container = document.getElementById('toastContainer');
-      
-      // 创建 toast 元素
       const toast = document.createElement('div');
       toast.className = `toast ${type}`;
       toast.textContent = message;
-      
       container.appendChild(toast);
-      
-      // 触发动画
       setTimeout(() => toast.classList.add('show'), 10);
-      
-      // 2秒后移除
       setTimeout(() => {
         toast.classList.remove('show');
-        setTimeout(() => {
-          if (toast.parentNode) toast.parentNode.removeChild(toast);
-        }, 400);
+        setTimeout(() => toast.parentNode?.removeChild(toast), 400);
       }, 2000);
     }
 
-    // === 表单提交 ===
+    // === 表单提交（✅ 使用相对路径 /api/signup）===
     document.getElementById('registerForm').addEventListener('submit', async (e) => {
       e.preventDefault();
 
@@ -301,9 +298,7 @@
       const password = document.getElementById('password').value;
       const confirmPassword = document.getElementById('confirmPassword').value;
 
-      // 清除旧错误
       document.querySelectorAll('.error-message').forEach(el => el.classList.remove('show-error'));
-
       let valid = true;
 
       if (!name) {
@@ -341,7 +336,8 @@
       btn.textContent = '注册中...';
 
       try {
-        const res = await fetch('http://127.0.0.1:8788/api/signup', {
+        // ✅ 关键修改：使用相对路径，适配生产环境
+        const res = await fetch('/api/signup', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ name, email, password })
@@ -352,16 +348,15 @@
         if (res.ok && data.success) {
           showToast('验证邮件已发送，有效期5分钟，请注意查收。', 'success');
           setTimeout(() => {
-            window.location.href = '../login.html';
+            window.location.href = '/login.html';
           }, 2000);
         } else {
-          // 后端返回的错误也用 Toast 显示
           const errorMsg = data.error || '注册失败，请稍后重试';
           showToast(errorMsg, 'error');
         }
       } catch (err) {
         console.error(err);
-        showToast('网络错误，请确保本地服务已启动', 'error');
+        showToast('网络错误，请稍后重试', 'error');
       } finally {
         btn.disabled = false;
         btn.textContent = originalText;
