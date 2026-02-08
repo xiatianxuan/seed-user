@@ -1,8 +1,9 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
+
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>用户集中管理系统</title>
   <style>
     * {
@@ -41,8 +42,16 @@
       transition: width 0.3s ease;
       z-index: 100;
     }
-    .sidebar:hover { width: 180px; }
-    .sidebar-inner { width: 180px; padding: 0 15px; }
+
+    .sidebar:hover {
+      width: 180px;
+    }
+
+    .sidebar-inner {
+      width: 180px;
+      padding: 0 15px;
+    }
+
     .nav-item {
       height: 42px;
       margin-bottom: 10px;
@@ -50,6 +59,7 @@
       align-items: center;
       white-space: nowrap;
     }
+
     .nav-text {
       opacity: 0;
       transform: translateX(-8px);
@@ -59,10 +69,12 @@
       font-weight: 500;
       font-size: 0.95rem;
     }
+
     .sidebar:hover .nav-text {
       opacity: 1;
       transform: translateX(0);
     }
+
     .nav-link {
       text-decoration: none;
       color: inherit;
@@ -73,6 +85,7 @@
       border-radius: 8px;
       transition: background 0.2s;
     }
+
     .nav-link:hover {
       background: rgba(255, 255, 255, 0.18);
     }
@@ -91,13 +104,16 @@
       backdrop-filter: blur(8px);
       -webkit-backdrop-filter: blur(8px);
     }
+
     .user-bar:hover {
       background: rgba(255, 255, 255, 0.25);
     }
+
     .username-display {
       font-size: 0.95rem;
       font-weight: 500;
     }
+
     .logout-btn {
       display: none;
       background: rgba(255, 255, 255, 0.2);
@@ -109,9 +125,11 @@
       cursor: pointer;
       backdrop-filter: blur(6px);
     }
+
     .user-bar:hover .logout-btn {
       display: block;
     }
+
     .logout-btn:hover {
       background: rgba(255, 255, 255, 0.35);
     }
@@ -123,15 +141,24 @@
       padding: 32px;
     }
 
-    h1, h2 {
+    h1,
+    h2 {
       font-weight: 600;
       margin-bottom: 12px;
       color: white;
     }
-    h1 { font-size: 1.8rem; }
-    h2 { font-size: 1.3rem; color: #e2e8f0; }
 
-    p, li {
+    h1 {
+      font-size: 1.8rem;
+    }
+
+    h2 {
+      font-size: 1.3rem;
+      color: #e2e8f0;
+    }
+
+    p,
+    li {
       font-size: 0.95rem;
       line-height: 1.6;
       margin-bottom: 8px;
@@ -149,8 +176,15 @@
       margin: 6px 0;
       font-size: 0.92rem;
     }
-    .info-label { font-weight: 600; opacity: 0.9; }
-    .info-value { opacity: 0.95; }
+
+    .info-label {
+      font-weight: 600;
+      opacity: 0.9;
+    }
+
+    .info-value {
+      opacity: 0.95;
+    }
 
     .role-badge {
       display: inline-block;
@@ -160,8 +194,21 @@
       font-weight: 600;
       margin-left: 6px;
     }
-    .role-admin { background: rgba(219, 234, 254, 0.3); color: #cbd5ff; }
-    .role-root { background: rgba(254, 226, 226, 0.3); color: #fed7d7; }
+
+    .role-admin {
+      background: rgba(219, 234, 254, 0.3);
+      color: #cbd5ff;
+    }
+
+    .role-root {
+      background: rgba(254, 226, 226, 0.3);
+      color: #fed7d7;
+    }
+
+    .role-user {
+      background: rgba(236, 254, 236, 0.3);
+      color: #bbf7d0;
+    }
 
     .divider {
       height: 1px;
@@ -169,11 +216,21 @@
       margin: 24px 0;
     }
 
-    .section { margin-top: 28px; }
-    .loading { color: rgba(255,255,255,0.8); font-style: italic; }
-    .error { color: #ff6b6b; }
+    .section {
+      margin-top: 28px;
+    }
+
+    .loading {
+      color: rgba(255, 255, 255, 0.8);
+      font-style: italic;
+    }
+
+    .error {
+      color: #ff6b6b;
+    }
   </style>
 </head>
+
 <body>
   <div class="container">
     <aside class="sidebar">
@@ -182,6 +239,17 @@
         <div class="nav-item"><a href="/management/" class="nav-link"><span class="nav-text">用户管理</span></a></div>
         <div class="nav-item"><a href="/settings/" class="nav-link"><span class="nav-text">个人设置</span></a></div>
         <div class="nav-item"><a href="/audit/" class="nav-link"><span class="nav-text">操作审计</span></a></div>
+        <!-- 仅 root 用户显示 -->
+        <div class="nav-item" id="nav-admin-settings" style="display:none;">
+          <a href="/admin-settings/" class="nav-link"><span class="nav-text">管理员设置</span></a>
+        </div>
+        <!-- 新增：注册 & 登录（默认隐藏） -->
+        <div class="nav-item" id="nav-signup" style="display:none;">
+          <a href="/signup/" class="nav-link"><span class="nav-text">注册</span></a>
+        </div>
+        <div class="nav-item" id="nav-login" style="display:none;">
+          <a href="/login/" class="nav-link"><span class="nav-text">登录</span></a>
+        </div>
       </div>
     </aside>
 
@@ -213,82 +281,112 @@
   </div>
 
   <script type="module">
-    // ===== API 配置 =====
+    const API_CURRENT_USER = '/api/user';
     const API_LIST_USERS = '/api/list-users';
     const API_LOGOUT = '/api/logout';
 
-    function createRoleBadge(role) {
+    function normalizeRole(role) {
+      if (typeof role === 'string') {
+        const r = role.toLowerCase().trim();
+        if (['root', 'super', 'superadmin', '0'].includes(r)) return 'root';
+        if (['admin', 'administrator', '1'].includes(r)) return 'admin';
+        if (['user', 'member', 'normal', '2'].includes(r)) return 'user';
+      }
+      if (typeof role === 'number') {
+        if (role === 0) return 'root';
+        if (role === 1) return 'admin';
+        if (role >= 2) return 'user';
+      }
+      return 'user';
+    }
+
+    function createRoleBadge(rawRole) {
+      const role = normalizeRole(rawRole);
       const span = document.createElement('span');
-      span.className = 'role-badge ' + (role === 'root' ? 'role-root' : 'role-admin');
-      span.textContent = role === 'root' ? 'root' : 'admin';
+      span.className = 'role-badge';
+
+      if (role === 'root') {
+        span.className += ' role-root';
+        span.textContent = 'root';
+      } else if (role === 'admin') {
+        span.className += ' role-admin';
+        span.textContent = 'admin';
+      } else {
+        span.className += ' role-user';
+        span.textContent = 'user';
+      }
+
       return span;
     }
 
-    // 从用户列表中推断当前用户（优先 root，否则取第一个）
-    function getCurrentUser(users) {
-      const rootUser = users.find(u => u.role === 'root');
-      return rootUser || users[0];
-    }
-
-    async function fetchUsersAndRender() {
+    async function fetchCurrentUser() {
       try {
-        const res = await fetch(API_LIST_USERS, { credentials: 'include' });
-
-        // 安全检查：确保返回的是 JSON
-        const contentType = res.headers.get('content-type');
-        if (!contentType || !contentType.includes('application/json')) {
-          throw new Error('API 返回了非JSON内容（可能是错误页）');
-        }
-
-        if (!res.ok) {
-          throw new Error(`HTTP ${res.status}`);
-        }
-
-        const users = await res.json();
-
-        if (!Array.isArray(users) || users.length === 0) {
-          throw new Error('用户列表为空');
-        }
-
-        // 渲染当前用户（假设是 root 或第一个）
-        const currentUser = getCurrentUser(users);
-        document.getElementById('top-username').textContent = currentUser.name;
-
-        const infoEl = document.getElementById('current-user-info');
-        infoEl.innerHTML = `
-          <div class="info-row"><span class="info-label">用户名：</span><span class="info-value">${currentUser.name}</span></div>
-          <div class="info-row"><span class="info-label">角色：</span><span class="info-value">${currentUser.role === 'root' ? '超级管理员' : '管理员'}</span></div>
-          <div class="info-row"><span class="info-label">邮箱：</span><span class="info-value">${currentUser.email}</span></div>
-          <div class="info-row"><span class="info-label">注册时间：</span><span class="info-value">${currentUser.created_at}</span></div>
-        `;
-        infoEl.querySelector('.info-row:nth-child(2) .info-value').appendChild(createRoleBadge(currentUser.role));
-
-        // 渲染所有用户
-        const listEl = document.getElementById('admin-list');
-        listEl.innerHTML = users.map(user => {
-          const li = document.createElement('li');
-          li.textContent = `${user.name} (${user.email}) `;
-          li.appendChild(createRoleBadge(user.role));
-          return li.outerHTML;
-        }).join('');
-
+        const res = await fetch(API_CURRENT_USER, { credentials: 'include' });
+        if (!res.ok) throw new Error('未登录或会话已过期');
+        const data = await res.json();
+        return data.user;
       } catch (err) {
-        console.error('加载失败:', err);
-        document.getElementById('current-user-info').innerHTML = `<div class="error">❌ ${err.message}</div>`;
-        document.getElementById('admin-list').innerHTML = `<li class="error">❌ 加载失败：${err.message}</li>`;
+        console.error('获取当前用户失败:', err);
+        return null;
       }
     }
 
-    // 登出
+    async function fetchAllUsers() {
+      try {
+        const res = await fetch(API_LIST_USERS, { credentials: 'include' });
+        const contentType = res.headers.get('content-type');
+        if (!contentType || !contentType.includes('application/json')) {
+          throw new Error('API 返回了非JSON内容');
+        }
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const users = await res.json();
+        if (!Array.isArray(users)) throw new Error('用户列表格式错误');
+        return users;
+      } catch (err) {
+        console.error('加载用户列表失败:', err);
+        return [];
+      }
+    }
+
+    function renderCurrentUser(user) {
+      const normalizedRole = normalizeRole(user.role);
+      const roleText =
+        normalizedRole === 'root' ? '超级管理员' :
+          normalizedRole === 'admin' ? '管理员' :
+            '普通用户';
+
+      document.getElementById('top-username').textContent = user.name;
+      const infoEl = document.getElementById('current-user-info');
+      infoEl.innerHTML = `
+        <div class="info-row"><span class="info-label">用户名：</span><span class="info-value">${user.name}</span></div>
+        <div class="info-row"><span class="info-label">角色：</span><span class="info-value">${roleText}</span></div>
+        <div class="info-row"><span class="info-label">邮箱：</span><span class="info-value">${user.email}</span></div>
+        <div class="info-row"><span class="info-label">注册时间：</span><span class="info-value">${user.created_at}</span></div>
+      `;
+      infoEl.querySelector('.info-row:nth-child(2) .info-value').appendChild(createRoleBadge(user.role));
+    }
+
+    function renderAllUsers(users) {
+      const listEl = document.getElementById('admin-list');
+      if (users.length === 0) {
+        listEl.innerHTML = '<li class="error">暂无用户数据（需管理员权限）</li>';
+        return;
+      }
+      listEl.innerHTML = users.map(user => {
+        const li = document.createElement('li');
+        li.textContent = `${user.name} (${user.email}) `;
+        li.appendChild(createRoleBadge(user.role));
+        return li.outerHTML;
+      }).join('');
+    }
+
     function setupLogout() {
       document.getElementById('logout-btn').addEventListener('click', async () => {
         try {
-          // 发起登出请求（兼容 GET 或 POST）
           await fetch(API_LOGOUT, {
             method: 'POST',
             credentials: 'include'
           });
-          // 登出成功后跳转到首页（或登录页）
           window.location.href = '/';
         } catch (err) {
           alert('登出失败，请重试');
@@ -296,11 +394,37 @@
       });
     }
 
-    // 初始化
-    document.addEventListener('DOMContentLoaded', () => {
-      fetchUsersAndRender();
+    document.addEventListener('DOMContentLoaded', async () => {
       setupLogout();
+
+      const [currentUser, allUsers] = await Promise.all([
+        fetchCurrentUser(),
+        fetchAllUsers()
+      ]);
+
+      const navSignup = document.getElementById('nav-signup');
+      const navLogin = document.getElementById('nav-login');
+
+      if (currentUser) {
+        renderCurrentUser(currentUser);
+        renderAllUsers(allUsers);
+        if (navSignup) navSignup.style.display = 'none';
+        if (navLogin) navLogin.style.display = 'none';
+        const normalizedRole = normalizeRole(currentUser.role);
+        const navAdminSettings = document.getElementById('nav-admin-settings');
+        if (navAdminSettings && normalizedRole === 'root') {
+          navAdminSettings.style.display = 'block';
+        }
+      } else {
+        document.getElementById('top-username').textContent = '未登录';
+        document.getElementById('current-user-info').innerHTML = '<div class="error">❌ 未登录或会话已过期</div>';
+        document.getElementById('admin-list').innerHTML = '<li class="error">❌ 请先登录</li>';
+
+        if (navSignup) navSignup.style.display = 'block';
+        if (navLogin) navLogin.style.display = 'block';
+      }
     });
   </script>
 </body>
+
 </html>

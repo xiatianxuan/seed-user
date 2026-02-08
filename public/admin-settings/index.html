@@ -1,0 +1,403 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>管理员设置 - 用户集中管理系统</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      background: url('/images/bg1.webp') center/cover no-repeat fixed;
+      color: rgba(255, 255, 255, 0.95);
+      font-family: "Inter", "SF Pro Display", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      min-height: 100vh;
+      padding: 0;
+      display: flex;
+    }
+
+    .container {
+      display: flex;
+      width: 100%;
+      max-width: 1400px;
+      margin: 0 auto;
+      position: relative;
+      z-index: 1;
+    }
+
+    /* 侧边栏 */
+    .sidebar {
+      width: 60px;
+      background: rgba(255, 255, 255, 0.12);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      color: white;
+      padding-top: 24px;
+      border-right: 1px solid rgba(255, 255, 255, 0.15);
+      transition: width 0.3s ease;
+      z-index: 100;
+    }
+    .sidebar:hover { width: 180px; }
+    .sidebar-inner { width: 180px; padding: 0 15px; }
+    .nav-item {
+      height: 42px;
+      margin-bottom: 10px;
+      display: flex;
+      align-items: center;
+      white-space: nowrap;
+    }
+    .nav-text {
+      opacity: 0;
+      transform: translateX(-8px);
+      transition: opacity 0.2s 0.1s, transform 0.2s 0.1s;
+      margin-left: 10px;
+      color: #f8fafc;
+      font-weight: 500;
+      font-size: 0.95rem;
+    }
+    .sidebar:hover .nav-text {
+      opacity: 1;
+      transform: translateX(0);
+    }
+    .nav-link {
+      text-decoration: none;
+      color: inherit;
+      display: flex;
+      align-items: center;
+      height: 100%;
+      padding: 0 12px;
+      border-radius: 8px;
+      transition: background 0.2s;
+    }
+    .nav-link:hover {
+      background: rgba(255, 255, 255, 0.18);
+    }
+
+    /* 右上角用户栏 */
+    .user-bar {
+      position: absolute;
+      top: 20px;
+      right: 20px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      background: rgba(255, 255, 255, 0.15);
+      padding: 6px 12px;
+      border-radius: 12px;
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+    }
+    .user-bar:hover {
+      background: rgba(255, 255, 255, 0.25);
+    }
+    .username-display {
+      font-size: 0.95rem;
+      font-weight: 500;
+    }
+    .logout-btn {
+      display: none;
+      background: rgba(255, 255, 255, 0.2);
+      color: white;
+      border: none;
+      padding: 4px 12px;
+      border-radius: 8px;
+      font-size: 0.9rem;
+      cursor: pointer;
+      backdrop-filter: blur(6px);
+    }
+    .user-bar:hover .logout-btn {
+      display: block;
+    }
+    .logout-btn:hover {
+      background: rgba(255, 255, 255, 0.35);
+    }
+
+    /* 主内容区 */
+    .main {
+      flex: 1;
+      margin-left: 60px;
+      padding: 32px;
+    }
+
+    h1, h2 {
+      font-weight: 600;
+      margin-bottom: 12px;
+      color: white;
+    }
+    h1 { font-size: 1.8rem; }
+    h2 { font-size: 1.3rem; color: #e2e8f0; }
+
+    p {
+      font-size: 0.95rem;
+      line-height: 1.6;
+      margin-bottom: 20px;
+      color: rgba(255, 255, 255, 0.92);
+    }
+
+    .form-group {
+      margin-bottom: 24px;
+    }
+    label {
+      display: block;
+      margin-bottom: 8px;
+      font-weight: 500;
+      color: #cbd5ff;
+    }
+    input[type="text"] {
+      width: 100%;
+      max-width: 400px;
+      padding: 10px 14px;
+      background: rgba(255, 255, 255, 0.15);
+      border: 1px solid rgba(255, 255, 255, 0.25);
+      border-radius: 8px;
+      color: white;
+      font-size: 1rem;
+      outline: none;
+    }
+    input[type="text"]:focus {
+      border-color: rgba(147, 197, 253, 0.7);
+      background: rgba(255, 255, 255, 0.2);
+    }
+
+    .button-group {
+      display: flex;
+      gap: 16px;
+      margin-top: 12px;
+    }
+    .btn {
+      padding: 10px 20px;
+      border: none;
+      border-radius: 8px;
+      font-size: 1rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .btn-set {
+      background: rgba(59, 130, 246, 0.3);
+      color: #dbeafe;
+    }
+    .btn-set:hover {
+      background: rgba(59, 130, 246, 0.5);
+    }
+    .btn-revoke {
+      background: rgba(239, 68, 68, 0.3);
+      color: #fed7d7;
+    }
+    .btn-revoke:hover {
+      background: rgba(239, 68, 68, 0.5);
+    }
+
+    .feedback {
+      margin-top: 16px;
+      padding: 12px;
+      border-radius: 8px;
+      font-size: 0.95rem;
+      display: none;
+    }
+    .feedback.success {
+      display: block;
+      background: rgba(34, 197, 94, 0.2);
+      color: #bbf7d0;
+    }
+    .feedback.error {
+      display: block;
+      background: rgba(239, 68, 68, 0.2);
+      color: #fed7d7;
+    }
+    .feedback.loading {
+      display: block;
+      background: rgba(147, 197, 253, 0.2);
+      color: #dbeafe;
+    }
+
+    .note {
+      font-size: 0.9rem;
+      color: rgba(255, 255, 255, 0.7);
+      margin-top: 8px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <aside class="sidebar">
+      <div class="sidebar-inner">
+        <div class="nav-item"><a href="/" class="nav-link"><span class="nav-text">系统首页</span></a></div>
+        <div class="nav-item"><a href="/management/" class="nav-link"><span class="nav-text">用户管理</span></a></div>
+        <div class="nav-item"><a href="/settings/" class="nav-link"><span class="nav-text">个人设置</span></a></div>
+        <div class="nav-item"><a href="/audit/" class="nav-link"><span class="nav-text">操作审计</span></a></div>
+        <div class="nav-item" id="nav-admin-settings" style="display:none;">
+          <a href="/admin-settings/" class="nav-link"><span class="nav-text">管理员设置</span></a>
+        </div>
+        <!-- 登录/注册 -->
+        <div class="nav-item" id="nav-signup" style="display:none;">
+          <a href="/signup/" class="nav-link"><span class="nav-text">注册</span></a>
+        </div>
+        <div class="nav-item" id="nav-login" style="display:none;">
+          <a href="/login/" class="nav-link"><span class="nav-text">登录</span></a>
+        </div>
+      </div>
+    </aside>
+
+    <div class="user-bar">
+      <span class="username-display" id="top-username">加载中...</span>
+      <button class="logout-btn" id="logout-btn">登出</button>
+    </div>
+
+    <main class="main">
+      <h1>管理员设置</h1>
+      <p>授予或撤销用户的管理员权限。支持通过 <strong>ID</strong>、<strong>用户名</strong> 或 <strong>邮箱</strong> 操作。</p>
+
+      <div class="form-group">
+        <label for="target-input">目标用户标识</label>
+        <input type="text" id="target-input" placeholder="输入用户 ID、用户名 或 邮箱" autocomplete="off">
+        <div class="note">例如：123、alice、alice@example.com</div>
+      </div>
+
+      <div class="button-group">
+        <button class="btn btn-set" id="set-admin-btn">设为管理员</button>
+        <button class="btn btn-revoke" id="revoke-admin-btn">撤销管理员</button>
+      </div>
+
+      <div id="feedback" class="feedback"></div>
+    </main>
+  </div>
+
+  <script type="module">
+    const API_CURRENT_USER = '/api/user';
+    const API_LOGOUT = '/api/logout';
+    const API_SET_ADMIN = '/api/set-admin';
+
+    function normalizeRole(role) {
+      if (typeof role === 'string') {
+        const r = role.toLowerCase().trim();
+        if (['root', 'super', 'superadmin', '0'].includes(r)) return 'root';
+        if (['admin', 'administrator', '1'].includes(r)) return 'admin';
+        if (['user', 'member', 'normal', '2'].includes(r)) return 'user';
+      }
+      if (typeof role === 'number') {
+        if (role === 0) return 'root';
+        if (role === 1) return 'admin';
+        if (role >= 2) return 'user';
+      }
+      return 'user';
+    }
+
+    function showFeedback(message, type = 'info') {
+      const el = document.getElementById('feedback');
+      el.textContent = message;
+      el.className = `feedback ${type}`;
+    }
+
+    async function fetchCurrentUser() {
+      try {
+        const res = await fetch(API_CURRENT_USER, { credentials: 'include' });
+        if (!res.ok) throw new Error('未登录');
+        const data = await res.json();
+        return data.user;
+      } catch (err) {
+        return null;
+      }
+    }
+
+    async function setAdminAction(revoke = false) {
+      const inputEl = document.getElementById('target-input');
+      const value = inputEl.value.trim();
+      if (!value) {
+        showFeedback('请输入目标用户标识', 'error');
+        return;
+      }
+
+      // 自动识别输入类型
+      let payload = {};
+      if (/^\d+$/.test(value)) {
+        payload.id = parseInt(value, 10);
+      } else if (value.includes('@')) {
+        payload.email = value;
+      } else {
+        payload.name = value;
+      }
+
+      // 控制是撤销还是授予
+      payload.revoke = revoke;
+
+      showFeedback(revoke ? '正在撤销管理员...' : '正在设为管理员...', 'loading');
+
+      try {
+        const res = await fetch(API_SET_ADMIN, {
+          method: 'POST',
+          credentials: 'include',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+
+        const result = await res.json();
+
+        if (res.ok && result.success) {
+          showFeedback(result.message || '操作成功', 'success');
+          inputEl.value = '';
+        } else {
+          showFeedback(result.error || '操作失败', 'error');
+        }
+      } catch (err) {
+        console.error('API Error:', err);
+        showFeedback('网络错误，请重试', 'error');
+      }
+    }
+
+    async function init() {
+      // 登出
+      document.getElementById('logout-btn').addEventListener('click', async () => {
+        await fetch(API_LOGOUT, { method: 'POST', credentials: 'include' });
+        window.location.href = '/';
+      });
+
+      // 获取当前用户
+      const currentUser = await fetchCurrentUser();
+      const topUsernameEl = document.getElementById('top-username');
+      if (!currentUser) {
+        topUsernameEl.textContent = '未登录';
+        showFeedback('请先登录', 'error');
+        return;
+      }
+
+      topUsernameEl.textContent = currentUser.name;
+      const normalizedRole = normalizeRole(currentUser.role);
+
+      // 控制菜单显示（与主页面一致）
+      const navAdminSettings = document.getElementById('nav-admin-settings');
+      const navSignup = document.getElementById('nav-signup');
+      const navLogin = document.getElementById('nav-login');
+      if (navSignup) navSignup.style.display = 'none';
+      if (navLogin) navLogin.style.display = 'none';
+      if (navAdminSettings && normalizedRole === 'root') {
+        navAdminSettings.style.display = 'block';
+      }
+
+      // 权限检查：非 root 不能操作
+      if (normalizedRole !== 'root') {
+        showFeedback('❌ 仅超级管理员（root）可管理管理员权限', 'error');
+        document.getElementById('target-input').disabled = true;
+        document.getElementById('set-admin-btn').disabled = true;
+        document.getElementById('revoke-admin-btn').disabled = true;
+        return;
+      }
+
+      // 绑定按钮
+      document.getElementById('set-admin-btn').addEventListener('click', () => setAdminAction(false));
+      document.getElementById('revoke-admin-btn').addEventListener('click', () => setAdminAction(true));
+
+      // 清除反馈
+      document.getElementById('target-input').addEventListener('focus', () => {
+        document.getElementById('feedback').className = 'feedback';
+      });
+    }
+
+    document.addEventListener('DOMContentLoaded', init);
+  </script>
+</body>
+</html>

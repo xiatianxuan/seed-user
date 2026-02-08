@@ -6,6 +6,8 @@ interface User {
   id: number;
   name: string;
   email: string;
+  role: string;
+  created_at: string; // ✅ 新增
 }
 
 interface AuthResult {
@@ -33,26 +35,33 @@ export async function authenticateRequest(
   if (!sessionId) return null;
 
   // 2. 查询数据库：检查 session 是否存在且未过期
-  // ✅ 使用 ISO 8601 UTC 时间字符串，与 login.ts 存储格式一致
   const nowUTC = new Date().toISOString();
 
   const session = await env.DB.prepare(`
-    SELECT s.user_id, u.name, u.email
+    SELECT s.user_id, u.name, u.email, u.role, u.created_at
     FROM sessions s
     JOIN users u ON s.user_id = u.id
     WHERE s.session_id = ? AND s.expires_at > ?
   `)
     .bind(sessionId, nowUTC)
-    .first<{ user_id: number; name: string; email: string }>();
+    .first<{ 
+      user_id: number; 
+      name: string; 
+      email: string; 
+      role: string;
+      created_at: string;
+    }>();
 
   if (!session) return null;
 
-  // 3. 返回用户信息
+  // 3. 返回完整用户信息
   return {
     user: {
       id: session.user_id,
       name: session.name,
-      email: session.email
-    }
+      email: session.email,
+      role: session.role,
+      created_at: session.created_at,
+    },
   };
 }
