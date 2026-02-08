@@ -15,7 +15,6 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-// ✅ 复用你已有的认证函数
 import { authenticateRequest } from './auth';
 
 interface Env {
@@ -29,27 +28,26 @@ export async function onRequest({
   request: Request;
   env: Env;
 }): Promise<Response> {
-  // 调用通用认证中间件
   const auth = await authenticateRequest(request, env);
 
   if (!auth) {
-    // 未登录：返回 401 Unauthorized
     return new Response(null, { status: 401 });
   }
 
-  // 已登录：返回用户基本信息（不包含敏感字段）
   return new Response(
     JSON.stringify({
       user: {
         id: auth.user.id,
         name: auth.user.name,
-        email: auth.user.email
+        email: auth.user.email,
+        role: auth.user.role,
+        created_at: auth.user.created_at // ✅ 现在有值了
       }
     }),
     {
       headers: {
         'Content-Type': 'application/json',
-        'Cache-Control': 'no-store' // 防止浏览器缓存敏感信息
+        'Cache-Control': 'no-store'
       }
     }
   );

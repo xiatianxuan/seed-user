@@ -8,5 +8,8 @@
     "skipLibCheck": true,
     "types": ["@cloudflare/workers-types"]
   },
-  "include": ["functions/**/*.ts"]
+  "include": [
+    "./**/*.ts",      // 👈 这会包含 utils/
+    "./**/*.js"
+  ]
 }
