@@ -8,7 +8,7 @@
 const SALT_LENGTH_BYTES = 32;
 
 // 🔁 迭代次数 — OWASP 推荐 ≥ 600,000 (SHA-512)
-const PBKDF2_ITERATIONS = 600_000;
+const PBKDF2_ITERATIONS = 10_000;
 
 // 🔑 输出密钥长度（字节）— 32 字节 = 256 位
 const KEY_LENGTH_BYTES = 32;
