@@ -142,11 +142,12 @@ export async function onRequest({
 
     waitUntil(emailPromise);
     return jsonSuccess('验证邮件已发送，有效期5分钟，请注意查收。', 201);
-  } catch (errorResponse: unknown) {
-    if (errorResponse instanceof Response) {
-      return errorResponse;
-    }
-    console.error('注册失败:', errorResponse);
-    return jsonError('服务器内部错误，请稍后重试', 500);
-  }
+  } catch (error: unknown) {
+  // 🔥 调试专用：把真实错误暴露给前端（上线前务必删除！）
+  const errMsg = (error as Error)?.message || String(error);
+  console.error('登录错误:', errMsg);
+
+  // 返回具体错误（仅用于调试！）
+  return jsonError(`调试: ${errMsg}`, 500);
+}
 }
