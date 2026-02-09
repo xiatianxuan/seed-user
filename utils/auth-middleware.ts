@@ -1,20 +1,22 @@
 // utils/auth-middleware.ts
 import type { D1Database } from '@cloudflare/workers-types';
 import { UserManager } from './user-manager';
+import { ROLE_PRESET } from './permissions'; // ✅ 正确导入 ROLE_PRESET
 
 export interface AuthContext {
   currentUser: {
     id: number;
     username: string;
-    role: string;
+    permissions: number; // ✅ 权限用数字位掩码表示
   };
 }
 
 /**
- * 验证请求是否来自已登录的 root 用户
+ * 验证请求是否来自具有 ROOT 权限的用户
+ * - ROOT 定义为：permissions === ROLE_PRESET.ROOT（即 -1）
  * - 从 Cookie 中提取 session ID
- * - 查询 D1 sessions 表验证有效性
- * - 检查关联用户是否存在且角色为 'root'
+ * - 查询 sessions 表验证有效性
+ * - 检查关联用户是否存在且 permissions 为 -1
  */
 export async function requireRootUser(
   request: Request,
@@ -33,7 +35,7 @@ export async function requireRootUser(
   }
 
   try {
-    // 2. 查询 sessions 表
+    // 2. 查询 sessions 表（主键是 session_id）
     const session = await env.DB.prepare(
       'SELECT user_id, expires_at FROM sessions WHERE session_id = ?'
     )
@@ -47,11 +49,10 @@ export async function requireRootUser(
       });
     }
 
-    // 3. 检查会话是否过期（expires_at 是 ISO 8601 字符串）
+    // 3. 检查会话是否过期
     const expiresAt = new Date(session.expires_at).getTime();
     if (expiresAt < Date.now()) {
-      // 可选：清理过期会话
-      await env.DB.prepare('DELETE FROM sessions WHERE id = ?')
+      await env.DB.prepare('DELETE FROM sessions WHERE session_id = ?')
         .bind(sessionId)
         .run();
       return new Response(JSON.stringify({ error: '会话已过期' }), {
@@ -71,8 +72,8 @@ export async function requireRootUser(
       });
     }
 
-    // 5. 检查角色是否为 root
-    if (user.role !== 'root') {
+    // 5. ✅ 修正：使用 ROLE_PRESET.ROOT 判断（值为 -1）
+    if (user.permissions !== ROLE_PRESET.ROOT) {
       return new Response(JSON.stringify({ error: '需要 root 权限' }), {
         status: 403,
         headers: { 'Content-Type': 'application/json' },
@@ -83,8 +84,8 @@ export async function requireRootUser(
     return {
       currentUser: {
         id: user.id,
-        username: user.username,
-        role: user.role,
+        username: user.name,
+        permissions: user.permissions,
       },
     };
   } catch (err) {

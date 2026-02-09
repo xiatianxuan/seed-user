@@ -7,7 +7,7 @@
 // 🧂 盐长度（字节）— 32 字节 = 256 位
 const SALT_LENGTH_BYTES = 32;
 
-// 🔁 迭代次数 — OWASP 推荐 ≥ 600,000 (SHA-256)
+// 🔁 迭代次数 — OWASP 推荐 ≥ 600,000 (SHA-512)
 const PBKDF2_ITERATIONS = 600_000;
 
 // 🔑 输出密钥长度（字节）— 32 字节 = 256 位
@@ -32,7 +32,7 @@ export async function computePasswordHash(
   salt: Uint8Array
 ): Promise<Uint8Array> {
   if (salt.length !== SALT_LENGTH_BYTES) {
-    throw new Error(`Salt must be exactly ${SALT_LENGTH_BYTES} bytes`);
+    throw new Error(`盐的长度必须为 ${SALT_LENGTH_BYTES} 字节`);
   }
 
   const passwordBytes = new TextEncoder().encode(password);
@@ -89,10 +89,30 @@ export function uint8ArrayToHex(arr: Uint8Array): string {
 
 /**
  * 辅助：将十六进制字符串转为 Uint8Array（从数据库读取后使用）
+ * 支持大小写 hex，但必须是偶数长度且仅含 0-9a-fA-F
  */
 export function hexToUint8Array(hex: string): Uint8Array {
-  if (!/^[0-9a-f]*$/i.test(hex) || hex.length % 2 !== 0) {
-    throw new Error('Invalid hex string');
+  if (typeof hex !== 'string') {
+    throw new Error('十六进制字符串必须为 string 类型');
   }
-  return new Uint8Array(hex.match(/.{1,2}/g)!.map(byte => parseInt(byte, 16)));
+
+  if (hex.length === 0) {
+    throw new Error('十六进制字符串不能为空');
+  }
+
+  if (hex.length % 2 !== 0) {
+    throw new Error(`无效的十六进制字符串：长度必须为偶数，当前长度为 ${hex.length}`);
+  }
+
+  if (!/^[0-9a-fA-F]+$/.test(hex)) {
+    throw new Error(`十六进制字符串包含非法字符: "${hex}"`);
+  }
+
+  // 安全分割：每两个字符一组
+  const matches = hex.match(/.{1,2}/g);
+  if (!matches) {
+    throw new Error('无法解析十六进制字符串');
+  }
+
+  return new Uint8Array(matches.map(byte => parseInt(byte, 16)));
 }

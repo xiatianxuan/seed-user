@@ -2,12 +2,11 @@
 import type { Env } from '../../types';
 import { requireRootUser } from '../../utils/auth-middleware';
 import { UserManager } from '../../utils/user-manager';
-
-
+import { PERM, ROLE_PRESET } from '../../utils/permissions';
 
 interface SetAdminRequestBody {
   id?: number;
-  name?: string;
+  name?: string;      // 注意：这里用 name，不是 username
   email?: string;
   revoke?: boolean;
 }
@@ -55,7 +54,7 @@ export async function onRequest({
     if (id !== undefined) {
       targetUser = await userManager.getUserById(id);
     } else if (name) {
-      targetUser = await userManager.getUserByUsername(name);
+      targetUser = await userManager.getUserByName(name);
     } else if (email) {
       targetUser = await userManager.getUserByEmail(email);
     }
@@ -69,28 +68,25 @@ export async function onRequest({
 
     if (targetUser.id === authResult.currentUser.id) {
       return new Response(
-        JSON.stringify({ error: '不能修改自己的角色' }),
+        JSON.stringify({ error: '不能修改自己的权限' }),
         { status: 400, headers: { 'Content-Type': 'application/json' } }
       );
     }
 
-    if (targetUser.role === 'root') {
+    if (targetUser.permissions === ROLE_PRESET.ROOT) {
       return new Response(
-        JSON.stringify({ error: '不能修改 root 用户的角色' }),
+        JSON.stringify({ error: '不能修改 root 用户的权限' }),
         { status: 400, headers: { 'Content-Type': 'application/json' } }
       );
     }
 
-    const newRole = revoke ? 'user' : 'admin';
+    const newPermissions = revoke 
+      ? PERM.READ 
+      : (PERM.READ | PERM.WRITE | PERM.DELETE | PERM.MANAGE_USERS);
 
-    const result = await env.DB.prepare(
-      'UPDATE users SET role = ? WHERE id = ?'
-    )
-      .bind(newRole, targetUser.id)
-      .run();
-
-    if (!result.success) {
-      throw new Error('数据库更新失败');
+    const success = await userManager.updatePermissions(targetUser.id, newPermissions);
+    if (!success) {
+      throw new Error('更新权限失败');
     }
 
     const actionText = revoke ? '撤销' : '授予';
@@ -99,12 +95,12 @@ export async function onRequest({
     return new Response(
       JSON.stringify({
         success: true,
-        message: `已${actionText}用户 "${targetUser.username}" 的${roleText}权限`,
+        message: `已${actionText}用户 "${targetUser.name}" 的${roleText}权限`, // ← 用 .name
         user: {
           id: targetUser.id,
-          username: targetUser.username,
+          name: targetUser.name,     // ← 不是 username
           email: targetUser.email,
-          role: newRole,
+          permissions: newPermissions,
         },
       }),
       {

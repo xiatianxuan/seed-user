@@ -6,8 +6,8 @@ interface User {
   id: number;
   name: string;
   email: string;
-  role: string;
-  created_at: string; // ✅ 新增
+  permissions: number;     // ✅ 替换 role
+  created_at: string;      // ✅ 保留
 }
 
 interface AuthResult {
@@ -38,7 +38,7 @@ export async function authenticateRequest(
   const nowUTC = new Date().toISOString();
 
   const session = await env.DB.prepare(`
-    SELECT s.user_id, u.name, u.email, u.role, u.created_at
+    SELECT s.user_id, u.name, u.email, u.permissions, u.created_at
     FROM sessions s
     JOIN users u ON s.user_id = u.id
     WHERE s.session_id = ? AND s.expires_at > ?
@@ -48,7 +48,7 @@ export async function authenticateRequest(
       user_id: number; 
       name: string; 
       email: string; 
-      role: string;
+      permissions: number;   // ✅ 替换 role
       created_at: string;
     }>();
 
@@ -60,7 +60,7 @@ export async function authenticateRequest(
       id: session.user_id,
       name: session.name,
       email: session.email,
-      role: session.role,
+      permissions: session.permissions, // ✅
       created_at: session.created_at,
     },
   };
